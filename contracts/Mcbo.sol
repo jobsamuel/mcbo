@@ -26,6 +26,9 @@ contract MCBO {
         require(success, "oh no!");
     }
 
+    // Only owner can allow address to claim.
+    function allowClaim(address _to) external {}
+
     function getBalance() external view returns (uint256) {
         return address(this).balance;
     }
