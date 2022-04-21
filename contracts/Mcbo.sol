@@ -60,6 +60,12 @@ contract MCBO {
         canClaim[_wallet] = true;
     }
 
+    function createUser(bytes32 _token) external isOwner {
+        users[userCount] = User(true, _token, userCount, address(0));
+
+        userCount += 1;
+    }
+
     function getBalance() external view returns (uint256) {
         return address(this).balance;
     }
