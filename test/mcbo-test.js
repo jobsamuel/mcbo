@@ -21,7 +21,7 @@ describe('MCBO', function () {
 
     expect(await mcbo.getBalance()).to.equal(ethers.utils.parseEther('2'))
 
-    await mcbo.connect(signers[0]).allowClaim(id)
+    await mcbo.connect(signers[0]).allowClaim(signers[2].address)
 
     await mcbo.connect(signers[2]).claimTip(id)
 
