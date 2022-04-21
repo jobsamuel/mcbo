@@ -2,21 +2,33 @@
 pragma solidity ^0.8.2;
 
 contract MCBO {
-    uint256 private constant MINIMUM_TIP_AMOUNT = 10**15;
+    address public owner;
+    uint256 private minimumTipAmount = 10**15;
 
     mapping(bytes32 => uint256) public balances;
+    mapping(bytes32 => bool) private canClaim;
+
+    constructor() {
+        owner = msg.sender;
+    }
 
     fallback() external payable {}
 
     receive() external payable {}
 
+    modifier isOwner() {
+        require(msg.sender == owner, "Permission denied.");
+        _;
+    }
+
     function sendTip(bytes32 _id) external payable {
-        require(msg.value >= MINIMUM_TIP_AMOUNT, "Tip too low.");
+        require(msg.value >= minimumTipAmount, "Tip too low.");
         balances[_id] += msg.value;
     }
 
-    // TODO: handle claim allowance.
     function claimTip(bytes32 _id) external payable {
+        require(canClaim[_id], "You are not allowed to claim.");
+
         uint256 totalTips = balances[_id];
 
         balances[_id] = 0;
@@ -26,8 +38,9 @@ contract MCBO {
         require(success, "oh no!");
     }
 
-    // Only owner can allow address to claim.
-    function allowClaim(address _to) external {}
+    function allowClaim(bytes32 _id) external isOwner {
+        canClaim[_id] = true;
+    }
 
     function getBalance() external view returns (uint256) {
         return address(this).balance;
