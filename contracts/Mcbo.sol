@@ -7,14 +7,12 @@ contract MCBO {
     uint256 public userCount = 0;
 
     struct User {
-        bool isVerified;
+        uint256 uid;
         bytes32 token;
-        uint256 id;
-        address wallet;
+        address payable wallet;
     }
 
     mapping(bytes32 => uint256) public balances;
-    mapping(address => bool) private canClaim;
     mapping(uint256 => User) private users;
 
     constructor() {
@@ -35,33 +33,35 @@ contract MCBO {
         balances[_token] += msg.value;
     }
 
-    function sendTipToUser(uint256 _id) external payable {
-        (bool _isVerified, bytes32 _token, ) = getUser(_id);
+    function sendTipToUser(uint256 _uid) external payable {
+        (bytes32 _token, address _wallet) = getUser(_uid);
 
-        require(_isVerified, "User does not exist.");
+        require(_wallet != address(0), "User does not exist.");
         require(msg.value >= minimumTipAmount, "Tip too low.");
 
         balances[_token] += msg.value;
     }
 
-    function claimTip(bytes32 _token) external payable {
-        require(canClaim[msg.sender], "You are not allowed to claim.");
+    function transferTipToUserWallet(uint256 _uid) external payable isOwner {
+        (bytes32 _token, address _wallet) = getUser(_uid);
+
+        require(_wallet != address(0), "User does not exist.");
+        require(_wallet != msg.sender, "Can not transfer balance.");
 
         uint256 totalTips = balances[_token];
 
         balances[_token] = 0;
 
-        (bool success, ) = payable(msg.sender).call{value: totalTips}("");
+        (bool success, ) = _wallet.call{value: totalTips}("");
 
         require(success, "Transfer failed.");
     }
 
-    function allowClaim(address _wallet) external isOwner {
-        canClaim[_wallet] = true;
-    }
-
-    function createUser(bytes32 _token) external isOwner {
-        users[userCount] = User(true, _token, userCount, address(0));
+    function createUser(bytes32 _token, address payable _wallet)
+        external
+        isOwner
+    {
+        users[userCount] = User(userCount, _token, _wallet);
 
         userCount += 1;
     }
@@ -70,19 +70,10 @@ contract MCBO {
         return address(this).balance;
     }
 
-    function getUser(uint256 _id)
-        private
-        view
-        returns (
-            bool,
-            bytes32,
-            address
-        )
-    {
-        bool _isVerified = users[_id].isVerified;
-        bytes32 _token = users[_id].token;
-        address _wallet = users[_id].wallet;
+    function getUser(uint256 _uid) private view returns (bytes32, address) {
+        bytes32 _token = users[_uid].token;
+        address _wallet = users[_uid].wallet;
 
-        return (_isVerified, _token, _wallet);
+        return (_token, _wallet);
     }
 }
