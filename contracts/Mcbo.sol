@@ -4,7 +4,7 @@ pragma solidity ^0.8.2;
 contract MCBO {
     address public owner;
     uint256 private minimumTipAmount = 10**15;
-    uint256 public userCount = 0;
+    uint256 public userCount;
 
     struct User {
         uint256 uid;
